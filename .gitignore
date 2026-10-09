@@ -8,3 +8,5 @@
 # Build output directories
 **/x64/
 **/_o/
+
+/test-artifacts

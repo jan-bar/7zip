@@ -24,6 +24,15 @@ using namespace NFile;
 using namespace NDir;
 
 
+struct CSmartExtractPathCompare
+{
+  bool operator()(const std::wstring &s1, const std::wstring &s2) const
+  {
+    return MyStringCompareNoCase(s1.c_str(), s2.c_str()) < 0;
+  }
+};
+
+
 static void SetErrorMessage(const char *message,
     const FString &path, HRESULT errorCode,
     UString &s)
@@ -110,7 +119,7 @@ static HRESULT DecompressArchive(
 
     if (options.SmartExtract.Val)
     {
-      std::set<std::wstring> firstLevelSet;
+      std::set<std::wstring, CSmartExtractPathCompare> firstLevelSet;
       for (UInt32 i = 0; i < numItems; i++)
       {
         RINOK(arc.GetItem(i, item))
