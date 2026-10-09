@@ -16,6 +16,9 @@
 #include "Extract.h"
 #include "SetProperties.h"
 
+#include <set>
+#include <string>
+
 using namespace NWindows;
 using namespace NFile;
 using namespace NDir;
@@ -104,6 +107,58 @@ static HRESULT DecompressArchive(
     RINOK(archive->GetNumberOfItems(&numItems))
     
     CReadArcItem item;
+
+    if (options.SmartExtract.Val)
+    {
+      std::set<std::wstring> firstLevelSet;
+      for (UInt32 i = 0; i < numItems; i++)
+      {
+        RINOK(arc.GetItem(i, item))
+        const UString &path =
+          #ifdef SUPPORT_ALT_STREAMS
+            item.MainPath;
+          #else
+            item.Path;
+          #endif
+        int slashPos = path.Find(L'/');
+        if (slashPos == -1)
+          slashPos = path.Find(L'\\');
+        if (slashPos == -1)
+          firstLevelSet.insert(std::wstring(path.Ptr()));
+        else
+          firstLevelSet.insert(std::wstring(path.Left(slashPos).Ptr()));
+        if (firstLevelSet.size() > 1)
+          break;
+      }
+      if (firstLevelSet.size() > 1)
+      {
+        UString replaceName = arc.DefaultName;
+        if (arcLink.Arcs.Size() > 1)
+        {
+          const CArc &arc0 = arcLink.Arcs[0];
+          if (arc0.FormatIndex >= 0 && StringsAreEqualNoCase_Ascii(codecs->Formats[(unsigned)arc0.FormatIndex].Name, "pe"))
+            replaceName = arc0.DefaultName;
+        }
+        const FString correctedName = us2fs(Get_Correct_FsFile_Name(replaceName));
+        NFile::NName::NormalizeDirPathPrefix(outDir);
+        FString smartOutDir = outDir + correctedName;
+        if (NFile::NFind::DoesFileOrDirExist(smartOutDir))
+        {
+          const FString baseSmartOutDir = smartOutDir;
+          for (UInt32 index = 2; ; index++)
+          {
+            smartOutDir = baseSmartOutDir;
+            smartOutDir += " (";
+            smartOutDir.Add_UInt32(index);
+            smartOutDir += ")";
+            if (!NFile::NFind::DoesFileOrDirExist(smartOutDir))
+              break;
+          }
+        }
+        outDir = smartOutDir;
+        NFile::NName::NormalizeDirPathPrefix(outDir);
+      }
+    }
 
     for (UInt32 i = 0; i < numItems; i++)
     {

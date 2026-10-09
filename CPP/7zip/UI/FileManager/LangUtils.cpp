@@ -8,6 +8,8 @@
 #include "../../../Windows/Synchronization.h"
 #include "../../../Windows/Window.h"
 
+#include "../Explorer/resource.h"
+
 #include "LangUtils.h"
 #include "RegistryUtils.h"
 
@@ -134,11 +136,64 @@ void LangSetWindowText(HWND window, UInt32 langID)
     MySetWindowText(window, s);
 }
 
+// Language packs are external to the source tree, so older packs have no
+// translation for the smart extraction command.
+static bool GetSmartExtractFallback(UInt32 langID, UString &dest)
+{
+  if (langID != IDS_CONTEXT_EXTRACT_HERE_SMART)
+    return false;
+
+  const wchar_t *extractHere = g_Lang.Get(IDS_CONTEXT_EXTRACT_HERE);
+  if (!extractHere)
+    return false;
+
+  struct CLangSuffix { const char *LangID; const wchar_t *Suffix; };
+  static const CLangSuffix kSuffixes[] =
+  {
+    { "zh-cn", L" (\u667a\u80fd)" },
+    { "zh-tw", L" (\u667a\u6167)" },
+    { "ja", L" (\u30b9\u30de\u30fc\u30c8)" },
+    { "ko", L" (\uc2a4\ub9c8\ud2b8)" },
+    { "de", L" (intelligent)" },
+    { "fr", L" (intelligent)" },
+    { "es", L" (inteligente)" },
+    { "it", L" (intelligente)" },
+    { "pt", L" (inteligente)" },
+    { "pt-br", L" (inteligente)" },
+    { "ru", L" (\u0443\u043c\u043d\u0430\u044f \u0440\u0430\u0441\u043f\u0430\u043a\u043e\u0432\u043a\u0430)" },
+    { "pl", L" (inteligentnie)" },
+    { "nl", L" (slim)" },
+    { "uk", L" (\u0440\u043e\u0437\u0443\u043c\u043d\u043e)" },
+    { "tr", L" (ak\u0131ll\u0131)" },
+    { "vi", L" (th\u00f4ng minh)" },
+    { "id", L" (cerdas)" },
+    { "hi", L" (\u0938\u094d\u092e\u093e\u0930\u094d\u091f)" },
+    { "th", L" (\u0e2d\u0e31\u0e08\u0e09\u0e23\u0e34\u0e22\u0e30)" },
+    { "ar", L" (\u0630\u0643\u064a)" },
+    { "cs", L" (inteligentn\u011b)" },
+    { "fi", L" (\u00e4lykk\u00e4\u00e4sti)" }
+  };
+
+  const wchar_t *suffix = L" (Smart)";
+  for (unsigned i = 0; i < Z7_ARRAY_SIZE(kSuffixes); i++)
+    if (g_LangID.IsEqualTo_Ascii_NoCase(kSuffixes[i].LangID))
+    {
+      suffix = kSuffixes[i].Suffix;
+      break;
+    }
+  dest = extractHere;
+  dest += suffix;
+  return true;
+}
+
 UString LangString(UInt32 langID)
 {
   const wchar_t *s = g_Lang.Get(langID);
   if (s)
     return s;
+  UString fallback;
+  if (GetSmartExtractFallback(langID, fallback))
+    return fallback;
   return MyLoadString(langID);
 }
 
@@ -149,13 +204,7 @@ void AddLangString(UString &s, UInt32 langID)
 
 void LangString(UInt32 langID, UString &dest)
 {
-  const wchar_t *s = g_Lang.Get(langID);
-  if (s)
-  {
-    dest = s;
-    return;
-  }
-  MyLoadString(langID, dest);
+  dest = LangString(langID);
 }
 
 void LangString_OnlyFromLangFile(UInt32 langID, UString &dest)

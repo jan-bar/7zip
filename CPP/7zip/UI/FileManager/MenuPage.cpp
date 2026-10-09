@@ -52,6 +52,7 @@ static const CContextMenuItem kMenuItems[] =
   { IDS_CONTEXT_OPEN, kOpenAs },
   { IDS_CONTEXT_EXTRACT, kExtract },
   { IDS_CONTEXT_EXTRACT_HERE, kExtractHere },
+  { IDS_CONTEXT_EXTRACT_HERE_SMART, kExtractHereSmart },
   { IDS_CONTEXT_EXTRACT_TO, kExtractTo },
 
   { IDS_CONTEXT_TEST, kTest },

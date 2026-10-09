@@ -8,6 +8,7 @@ CFLAGS = $(CFLAGS) \
   -DZ7_SFX \
   -DZ7_NO_LONG_PATH \
   -DZ7_NO_LARGE_PAGES \
+  -DWIN_LONG_PATH \
 
 !IFDEF UNDER_CE
 LIBS = $(LIBS) ceshell.lib Commctrl.lib
